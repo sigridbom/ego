@@ -75,7 +75,11 @@ aud <- aud %>%
 ggplot(aud, aes(congruency, rt)) + geom_boxplot() + stat_summary(fun.y = mean, geom = "point", shape = 23, colour = "red")
 
 # geom_bar
-ggplot(aud, aes(congruency, rt)) + geom_bar(aes(fill = as.factor(congruency)), position = "dodge", stat = "summary", fun.y = "mean") + geom_errorbar(stat = 'summary', fun.data = mean_se, width = 0.25) + labs(title = 'Hey', subtitle = 'whatup') + theme(legend.title = element_blank()) #+ scale_colour_hue(labels = c('congruent', 'incongruent')) 
+ggplot(aud, aes(congruency, rt)) + geom_bar(aes(fill = as.factor(congruency)), position = "dodge", stat = "summary", fun.y = "mean") + geom_errorbar(stat = 'summary', fun.data = mean_se, width = 0.25) + labs(title = 'Hey', subtitle = 'whatup') + theme(legend.title = element_blank()) 
+
+
+
+#+ scale_colour_hue(labels = c('congruent', 'incongruent')) 
 
 
 
