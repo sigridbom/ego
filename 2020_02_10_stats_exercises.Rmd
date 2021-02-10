@@ -1,0 +1,180 @@
+---
+title: "Stats_exercises"
+author: "Sigrid"
+date: "2/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load(tidyverse, rethinking)
+```
+
+# Chapter 2 Practice
+
+# Chapter 3 
+
+## 3.5 Practice
+
+*Easy* These problems use the samples from the posterior distribution for the globe tossing example. This code will give you a specific set of samples, so that you can check your answers exactly.
+```{r}
+# from the book
+p_grid <- seq( from=0 , to=1 , length.out=1000 ) 
+prior <- rep( 1 , 1000 )
+likelihood <- dbinom( 6 , size=9 , prob=p_grid ) 
+posterior <- likelihood * prior
+posterior <- posterior / sum(posterior)
+set.seed(100)
+samples <- sample( p_grid , prob=posterior , size=1e4 , replace=TRUE )
+
+plot(samples)
+dens(samples)
+```
+
+
+```{r}
+####### IN TIDYVERSE LANGUAGE
+
+n = 1000
+n_success = 6
+n_trials = 9
+
+(
+  d <-
+  tibble(
+    p_grid = seq(from = 0, to = 1, length.out = n),
+    prior  = rep(1, 1000)
+    ) %>% 
+  mutate(
+    likelihood = dbinom(n_success, size = n_trials, prob = p_grid)) %>% 
+  mutate(
+    posterior = (likelihood * prior) / sum(likelihood * prior))
+)
+
+# how many samples would you like?
+n_samples <- 1e4
+
+# make it reproducible
+set.seed(3)
+
+samples <-
+  d %>% 
+  slice_sample(n = n_samples, weight_by = posterior, replace = T)
+
+glimpse(samples)
+
+
+#plotting
+samples %>% 
+  mutate(sample_number = 1:n()) %>% 
+  
+  ggplot(aes(x = sample_number, y = p_grid)) +
+  geom_point(alpha = 1/10) +
+  scale_y_continuous("proportion of water (p)", limits = c(0, 1)) +
+  xlab("sample number")
+
+
+samples %>% 
+  ggplot(aes(x = p_grid)) +
+  geom_density(fill = "black") +
+  scale_x_continuous("proportion of water (p)", limits = c(0, 1))
+
+```
+
+Use the values in samples to answer the questions that follow.
+
+3E1. How much posterior probability lies below p = 0.2?
+
+Answer: 4e-04. = 0.0004%
+That is, with the set seed above, the amount of posertior probability below p = 0.2 is very small. 
+
+
+```{r}
+mean(samples < 0.2)
+# mean does the same as with sum, it figures out whether the value is below the threshold True / False
+```
+
+3E2. How much posterior probability lies above p = 0.8?
+Answer: 0.11%
+
+```{r}
+mean(samples > 0.8)
+```
+
+3E3. How much posterior probability lies between p = 0.2 and p = 0.8? 
+Answer: 0.89 %
+
+```{r}
+mean(samples > 0.2 & samples < 0.8)
+```
+
+3E4. 20% of the posterior probability lies below which value of p?
+
+```{r}
+quantile(samples, prob = 0.2)
+```
+
+3E5. 20% of the posterior probability lies above which value of p?
+
+```{r}
+quantile(samples, prob = 0.8)
+```
+3E6. Which values of p contain the narrowest interval equal to 66% of the posterior probability?
+
+```{r}
+rethinking::HPDI(samples, prob = 0.66)
+```
+
+3E7. Which values of p contain 66% of the posterior probability, assuming equal posterior probability both below and above the interval?
+
+```{r}
+PI(samples, 0.66)
+```
+
+*Medium*.
+3M1. Suppose the globe tossing data had turned out to be 8 water in 15 tosses. Construct the poste-
+rior distribution, using grid approximation. Use the same flat prior as before.
+
+```{r}
+t <- tibble(
+  p_grid = seq( from=0 , to=1 , length.out=1000 ),
+  prior = 1,
+  likelihood = dbinom( 8 , size=15 , prob=p_grid )
+  ) %>% 
+    mutate(
+      posterior = likelihood * prior,
+      posterior = posterior / sum(posterior)
+    )
+
+```
+
+3M2. Draw 10,000 samples from the grid approximation from above. Then use the samples to cal-
+culate the 90% HPDI for p.
+
+```{r}
+set.seed(100)
+samples <- sample( p_grid , prob=posterior , size=1e4 , replace=TRUE )
+
+plot(samples)
+dens(samples)
+
+ggplot(t, aes(p_grid, posterior)) + geom_point()
+
+HPDI(samples, 0.9)
+```
+
+3M3. Construct a posterior predictive check for this model and data. This means simulate the distri- bution of samples, averaging over the posterior uncertainty in p. What is the probability of observing 8 water in 15 tosses?
+
+```{r}
+
+```
+
+
+3M4. Usingtheposteriordistributionconstructedfromthenew(8/15)data,nowcalculatetheprob- ability of observing 6 water in 9 tosses.
+3M5. Startoverat3M1,butnowuseapriorthatiszerobelowp=0.5andaconstantabovep=0.5. This corresponds to prior information that a majority of the Earth’s surface is water. Repeat each problem above and compare the inferences. What difference does the better prior make? If it helps, compare inferences (using both priors) to the true value p = 0.7.
+R code 3.27
+
+3M6. Suppose you want to estimate the Earth’s proportion of water very precisely. Specifically, you want the 99% percentile interval of the posterior distribution of p to be only 0.05 wide. This means the distance between the upper and lower bound of the interval should be 0.05. How many times will you have to toss the globe to do this?
