@@ -1,0 +1,83 @@
+---
+title: "2020_02_10_per_act_PE_2"
+author: "Sigrid"
+date: "2/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+pacman::p_load(tidyverse)
+```
+
+```{r}
+vis = list.files(path='./vision', pattern="*.csv", full.names=TRUE) %>%
+  map_df(~read_csv(.))
+
+aud = list.files(path='./auditory', pattern="*.csv", full.names=TRUE) %>%
+  map_df(~read_csv(.))
+
+
+```
+
+```{r}
+sum(vis$accuracy == FALSE)
+sum(vis$accuracy == TRUE)
+
+
+vis <- vis %>% 
+  mutate(
+    key_press = as.factor(key_press),
+    size = as.factor(size),
+    accuracy = as.factor(accuracy),
+    congruency = as.factor(congruency)
+  ) %>% 
+ filter(accuracy == TRUE, rt < 9000) %>% 
+  group_by(congruency)
+
+# mean reaction times per congruency
+library(ggplot2)
+
+#boxplot
+ggplot(vis, aes(congruency, rt)) + geom_boxplot() + stat_summary(fun.y = mean, geom = "point", shape = 23, colour = "red")
+
+# geom_bar
+ggplot(vis, aes(congruency, rt)) + geom_bar(aes(fill = as.factor(congruency)), position = "dodge", stat = "summary", fun.y = "mean") + geom_errorbar(stat = 'summary', fun.data = mean_se, width = 0.25)
+
+
+# ??
+means <- colMeans(my_df) # Equivalent (more efficient) points(means, col = "red", pch = 19)
+
+```
+
+```{r}
+sum(aud$accuracy == FALSE)
+sum(aud$accuracy == TRUE)
+
+
+aud <- aud %>% 
+  mutate(
+    key_press = as.factor(key_press),
+    size = as.factor(size),
+    accuracy = as.factor(accuracy),
+    congruency = as.factor(congruency)
+  ) %>% 
+ filter(accuracy == TRUE, rt < 9000) %>% 
+  group_by(congruency)
+
+
+
+#boxplot
+ggplot(aud, aes(congruency, rt)) + geom_boxplot() + stat_summary(fun.y = mean, geom = "point", shape = 23, colour = "red")
+
+# geom_bar
+ggplot(aud, aes(congruency, rt)) + geom_bar(aes(fill = as.factor(congruency)), position = "dodge", stat = "summary", fun.y = "mean") + geom_errorbar(stat = 'summary', fun.data = mean_se, width = 0.25) + labs(title = 'Hey', subtitle = 'whatup') + theme(legend.title = element_blank()) #+ scale_colour_hue(labels = c('congruent', 'incongruent')) 
+
+
+
+```
+
