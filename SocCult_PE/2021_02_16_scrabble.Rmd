@@ -1,0 +1,71 @@
+---
+title: "2021-02-16_scrabble"
+author: "Sigrid"
+date: "2/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Scrabble experiment
+
+## Hypotheses
+
+H1: More words are generated in groups than by an individual (team is better than average individual)
+H2: Fewer incorrect words (non-words, mistakes etc) are submitted in groups compared to individuals
+H3: Something about using the individual task to make an assessment of the individual's type and using that to see if the pair will perform better if they are similar or different types
+H4: Team is better than the optimal individual? 
+H5: Team is better than the combined production of the two individuals 
+H6: The individual performance was better in the third round compared to the first round (the teamwork might have had a positive effect - but could also be due to practicing the task)
+H7: somethign about the kind of words produced and group differences/similarities
+H8: something about word length and word complexity - some words are easier/harder to come up with than others
+H9: higher or lower diversity in the third round compared to the first round
+
+Normally, there should be a condition without the group thing in the second round (to see if it is due to practice or to the group formation - team work)
+
+
+From the docs: https://docs.google.com/document/d/1mk2nLW5BwLK09aZpUX69YhwJzfMED6mmWh8brvanU5A/edit
+
+Most useful dataset is “GroupLevelSummary.csv”
+
+Assessing teamwork (vs individuals)
+Team is better than average individual
+Team is better than best of the two individuals
+Team is better than the combined production of the two individuals
+
+Assessing group differences in teamwork
+Equality bias affects team performance
+Diversity of performance affects team performance
+
+Assessing effects of teamwork (on individual performance)
+Would teamwork leave a trace also on individual ability?
+Equality bias affects post teamwork performance
+Does similarity increase after collaborating?
+Does diversity decrease after collaborating?
+
+
+```{r}
+pacman::p_load(tidyverse, lme4, lmerTest)
+
+df <- read_csv('/Users/sigridagersnap/Documents/R studio data/4_semester/ego/SocCult_PE/Archive/ParticipantLevelbyRoundSummary.csv')
+
+```
+
+```{r}
+# group performance versus individual
+ggplot(df, aes(df$CollectiveBenefitHard)) + geom_histogram()
+
+# individual change
+ggplot(df, aes(df$IndividualChange)) + geom_histogram()
+
+ggplot(df, aes(df$TotalGroup, df$SimilarityRatio)) + geom_point() + geom_smooth(method = 'lm') 
+
+summary(lmerTest::lmer(df$SimilarityRatio ~ df$TotalGroup + (1|Group), data = df))
+
+df %>% group_by(Group) %>% ggplot( aes(TotalGroup, SimilarityRatio)) + geom_point() + geom_smooth(method = 'lm') 
+
+
+```
+
