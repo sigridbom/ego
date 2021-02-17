@@ -1,0 +1,40 @@
+---
+title: "Simon_task"
+author: "Sigrid"
+date: "2/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load(fs, tidyverse, lmerTest, lme4)
+```
+
+```{r}
+#loading data
+file_list <- dir_ls(path ="/Users/sigridagersnap/Documents/R studio data/4_semester/ego/ModPerAct_PE/2021_02_17_Simon/Simon_data", glob="*.csv") 
+
+dat <- file_list %>% map_dfr(read_csv)
+```
+
+
+```{r}
+# mutating the data and creating a congruency column
+dat <- dat %>% 
+  mutate(
+    congruency = ifelse(
+      color == 'green' & position == 'left' | color == 'red' & position == 'right', 'congruent', 'incongruent'),
+    congruency = ifelse(position == 'middle', 'neutral', congruency),
+    congruency = as.factor(congruency),
+    accuracy = as.factor(accuracy)
+  )
+
+dat <- dat %>% filter(part == 'test')
+
+
+
+```
+
