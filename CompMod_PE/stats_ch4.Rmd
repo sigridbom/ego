@@ -1,0 +1,84 @@
+---
+title: "stats_ch4"
+author: "Sigrid"
+date: "18/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load(tidyverse, rethinking)
+```
+
+# 4.7 Practice
+*Easy*
+
+4E1. The first line is the likelihood
+yi ~ Normal (mu, sigma)
+
+4E2. Two parameters; mu and sigma
+
+4E3. Bayes' theorem
+
+P(yi | mu,sigma) = (y_i ~ Normal(mu, sigma) * mu~Normal(0,10) * sigma~Exponential(1))/sum(all of the above)
+
+4E4. Line number two is the linear model
+mu_i = alpha + beta*x_i
+
+4E5. Three parameters; alpha, beta and sigma
+y is not a parameter, because it is the data (outcome variable) and mu_i is no longer a parameter, because it is now deterministic (=) and not probabilistic
+
+*Medium*
+4M1. For the model definition below, simulate observed heights from the prior (not the posterior).
+𝑦𝑖∼Normal(𝜇,𝜎)
+𝜇∼Normal(0,10)
+𝜎∼Uniform(0,10)
+
+```{r}
+n <- 1e4
+
+set.seed(4)
+
+sim <- tibble(
+  sample_mu = rnorm(n, 0, 10),
+  sample_sigma = rexp(n, rate = 1),
+  prior_r = rnorm(n, sample_mu, sample_sigma) 
+) 
+
+sim %>% ggplot(aes(x = prior_r)) +
+  geom_density(fill = 'grey33') +  
+  ggtitle("height ~ dnorm(mu, sigma)") +
+  theme(panel.grid = element_blank())
+```
+4M2. Translate the model just above into quap formula
+```{r}
+q <- quap(
+  alist(
+    prior_r ~ dnorm(mu, sigma),
+    mu ~ dnorm(0,10),
+    sigma ~ dunif(0,10),
+  ), data = sim
+)
+
+```
+4M3. Translate the quap model formula below into a mathematical model definition. 
+
+```{r}
+
+```
+
+
+```{r}
+data(Howell1); d <- Howell1
+
+
+```
+
+wesanderson
+
+RColorBrewer
+
+scale_fill_manual(values = wes_palette("FantasticFox1"))

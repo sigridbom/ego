@@ -1,0 +1,133 @@
+---
+title: "stats_ch5"
+author: "Sigrid"
+date: "2/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load(tidyverse, brms)
+```
+
+Chapter 5 code - but using tidy verse and BRMS
+
+```{r}
+# 5.1
+
+#loading data without loading rethinking
+data(WaffleDivorce, package = "rethinking")
+d <- WaffleDivorce
+
+rm(WaffleDivorce)
+
+# standardizing the variables again without loading the package
+d <-
+  d %>% 
+  mutate(d = rethinking::standardize(Divorce),
+         m = rethinking::standardize(Marriage),
+         a = rethinking::standardize(MedianAgeMarriage))
+
+head(d)
+glimpse(d)
+```
+
+```{r}
+install.packages("ggrepel", depencencies = T)
+library(ggrepel)
+
+d %>%
+  ggplot(aes(x = WaffleHouses/Population, y = Divorce)) +
+  stat_smooth(method = "lm", fullrange = T, size = 1/2,
+              color = "firebrick4", fill = "firebrick", alpha = 1/5) +
+  geom_point(size = 1.5, color = "firebrick4", alpha = 1/2) +
+  geom_text_repel(data = d %>% filter(Loc %in% c("ME", "OK", "AR", "AL", "GA", "SC", "NJ")),  
+                  aes(label = Loc), 
+                  size = 3, seed = 1042) +  # this makes it reproducible
+  scale_x_continuous("Waffle Houses per million", limits = c(0, 55)) +
+  ylab("Divorce rate") +
+  coord_cartesian(xlim = c(0, 50), ylim = c(5, 15)) +
+  theme_bw() +
+  theme(panel.grid = element_blank())
+```
+
+```{r}
+#devtools::install_github("UrbanInstitute/urbnmapr")
+library(urbnmapr)
+
+left_join(
+  # get the map data
+  get_urbn_map(map = "states", sf = TRUE),
+  # add the primary data
+  d %>% 
+    mutate(state_name = Location %>% as.character()) %>% 
+    select(d:a, state_name),
+  by = "state_name"
+) %>%
+  # convert to the long format for faceting
+  pivot_longer(d:a) %>% 
+  
+  # plot!
+  ggplot() +
+  geom_sf(aes(fill = value, geometry = geometry),
+          size = 0) +
+  scale_fill_gradient(low = "#f8eaea", high = "firebrick4") +
+  theme_void() +
+  theme(legend.position = "none",
+        strip.text = element_text(margin = margin(0, 0, .5, 0))) +
+  facet_wrap(~name) 
+```
+
+
+```{r}
+b5.1 <- 
+  brm(data = d, 
+      family = gaussian,
+      d ~ 1 + a,
+      prior = c(prior(normal(0, 0.2), class = Intercept),
+                prior(normal(0, 0.5), class = b),
+                prior(exponential(1), class = sigma)),
+      iter = 2000, warmup = 1000, chains = 4, cores = 4,
+      seed = 5,
+      sample_prior = T,
+      file = "fits/b05.01")
+```
+```{r}
+#5.7
+pacman::p_load(ggdag, dagitty)
+```
+
+```{r}
+set.seed(5)
+
+dagify(M ~ A,
+       D ~ A + M) %>%
+  ggdag(node_size = 8)
+```
+
+# PRACTICE
+
+## 5M1 
+Invent your own example of a spurious correlation. An outcome variable should be correlated with both predictor variables. But when both predictors are entered in the same model, the correlation between the outcome and one of the predictors should mostly vanish (or at least be greatly reduced).
+
+```{r}
+# Number of tickets sold predicted by the average shoe size and resting heart rate
+n <- 100
+set.seed(5)
+
+sim_d <- 
+  tibble(
+    shoe = rnorm(n, mean = 0, sd = 1)) %>% # sim shoe size std.
+      mutate(
+        hr = rnorm(n, mean = -shoe, sd = 1), # shoe size --> resting heart rate
+        tickets = rnorm(n, mean = shoe, sd = 1) # shoe size --> tickets sold
+      )
+
+head(sim_d)
+
+pairs(sim_d, col = 'firebrick4')
+```
+

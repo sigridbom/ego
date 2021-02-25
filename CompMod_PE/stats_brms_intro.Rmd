@@ -1,0 +1,87 @@
+---
+title: "stats_brms_intro"
+author: "Sigrid"
+date: "2/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load(brms, tidyverse)
+```
+
+Globe tossing example, w = 6 and n = 9
+
+```{r}
+# building the model using brms
+
+b3.1 <- 
+  brm(data = list(w = 6),
+      family = binomial(link = 'identity'),
+      w | trials(9) ~ 0 + Intercept,
+      prior(beta(1,1), class = b, lb = 0, ub = 1), #flat prior
+      iter = 5000, warmup = 1000,
+      seed = 3, 
+      file = 'fits/b03.1'
+      )
+
+```
+
+```{r}
+posterior_summary(b3.1)["b_Intercept", ] %>% 
+  round(digits = 2)
+```
+
+Estimate is the posterior mean, the two Q columns are the quantile-based 95% intervals, and Est.Error is the posterior standard deviation.
+
+Now we want to simulate. BRMS does that using fitted() and not sample()
+
+```{r}
+f <- 
+  fitted(b3.1, 
+         scale = 'linear', # to get the values in the probability metric
+         summary = F) %>% # we want samples, not a summary 
+    as.tibble() %>% 
+  set_names('p') #changing the column name of the samples
+
+glimpse(f)
+
+```
+
+```{r}
+f %>% ggplot(aes(x = p)) +
+  geom_density(fill = 'grey50', colour = 'grey50') + 
+  annotate(geom = 'text', label = 'Posterior probability', x = .08, y = 2.5) + 
+   scale_x_continuous("probability of water",
+                     breaks = c(0, .5, 1),
+                     limits = 0:1) +
+  scale_y_continuous(NULL, breaks = NULL) +
+  theme(panel.grid = element_blank())
+```
+Using this distribution of probabilities (samples) to predict histograms of w counts
+
+```{r}
+# the simulation
+set.seed(3)
+n_trials = 9
+
+f <-
+  f %>% 
+  mutate(w = rbinom(n(), size = n_trials,  prob = p))
+
+# the plot
+f %>% 
+  ggplot(aes(x = w)) +
+  geom_histogram(binwidth = 1, center = 0,
+                 color = "grey92", size = 1/10) +
+  scale_x_continuous("number of water samples",
+                     breaks = seq(from = 0, to = 9, by = 3)) +
+  scale_y_continuous(NULL, breaks = NULL, limits = c(0, 5000)) +
+  ggtitle("Posterior predictive distribution") +
+  coord_cartesian(xlim = c(0, 9)) +
+  theme(panel.grid = element_blank())
+```
+
