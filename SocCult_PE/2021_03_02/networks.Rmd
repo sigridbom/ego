@@ -1,0 +1,267 @@
+---
+title: "networks"
+author: "Sigrid"
+date: "3/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Load packages}
+pacman::p_load(tidyverse,
+               here,
+               network,
+               igraph,
+               ggraph,
+               tidygraph,
+               patchwork)
+```
+
+```{r}
+# loading data
+
+friends_0 <- read_csv("/Users/sigridagersnap/Documents/R studio data/4_semester/ego/SocCult_PE/2021_03_02/data/CogSci19S0_NetworkFriends.csv") %>% 
+  subset(
+    !is.na(to) & !is.na(from) & !is.na(weight)
+  )
+  
+friends_1 <- read_csv("/Users/sigridagersnap/Documents/R studio data/4_semester/ego/SocCult_PE/2021_03_02/data/CogSci19S1_NetworkFriends.csv") %>% 
+  subset(
+    !is.na(to) & !is.na(from) & !is.na(weight)
+  )
+
+friends_4 <- read_csv("/Users/sigridagersnap/Documents/R studio data/4_semester/ego/SocCult_PE/2021_03_02/data/CogSci19S4_NetworkFriends.csv") %>% 
+  subset(
+    !is.na(to) & !is.na(from) & !is.na(weight)
+  )
+  
+# creating unique IDs
+nodes0 <- data.frame(ID = unique(c(
+  friends_0$from,
+  friends_0$to)))
+
+nodes1 <- data.frame(ID = unique(c(
+  friends_1$from,
+  friends_1$to)))
+
+
+nodes4 <- data.frame(ID = unique(c(
+  friends_4$from,
+  friends_4$to)))
+
+
+ friends_0$from,
+  friends_1$from,
+  friends_0$to,
+  friends_1$to,
+# fixing 
+nodes <- nodes %>% subset(
+   !(ID %in% c("fake0", "fake", "100", "1")) & !is.na(ID)
+)
+```
+
+
+```{r}
+# Create the graph from semester 0
+CogSci_2019_n0_igraph <-
+  graph_from_data_frame(d = friends_0,
+                        vertices = nodes,
+                        directed = TRUE)
+
+plot(CogSci_2019_n0_igraph,
+     layout = layout_on_sphere, # Explore layouts!
+     edge.arrow.size = 0.2)
+
+CogSci_2019_n0_igraph <- simplify(CogSci_2019_n0_igraph, 
+                                  remove.multiple = TRUE, 
+                                  remove.loops = TRUE,
+                                  edge.attr.comb = igraph_opt("edge.attr.comb"))
+
+
+plot(CogSci_2019_n0_igraph,
+     layout = layout_on_sphere, # Explore layouts!
+     edge.arrow.size = 0.2)
+
+E(CogSci_2019_n0_igraph)$arrow.mode <- 0
+
+plot(CogSci_2019_n0_igraph,
+     layout = layout_on_sphere, # Explore layouts!
+     edge.arrow.size = 0.2)
+
+V(CogSci_2019_n0_igraph)$label <- "" 
+
+plot(CogSci_2019_n0_igraph,
+     layout = layout_on_sphere, # Explore layouts!
+     edge.arrow.size = 0.2)
+
+V(CogSci_2019_n0_igraph)$frame.color <- "white"
+V(CogSci_2019_n0_igraph)$color <- "orange"
+E(CogSci_2019_n0_igraph)$width <- edge_attr(CogSci_2019_n0_igraph)$weight
+plot(CogSci_2019_n0_igraph,
+     layout = layout_on_sphere, # Explore layouts!
+     edge.arrow.size = 0.2)
+
+deg <- degree(CogSci_2019_n0_igraph, mode="all")
+V(CogSci_2019_n0_igraph)$size <- deg
+
+p0<-plot(CogSci_2019_n0_igraph,
+     layout = layout_on_sphere, # Explore layouts!
+     edge.arrow.size = 0.2)
+
+plot(CogSci_2019_n0_igraph,
+     layout = layout_nicely, # Explore layouts!
+     edge.arrow.size = 0.2)
+```
+
+
+```{r}
+# GGPLOT LIKE ALTERNATIVE
+
+CogSci_2019_n0_tidy <-
+  tbl_graph(nodes = nodes,
+            edges = friends_0,
+            directed = TRUE)
+ggraph(CogSci_2019_n0_tidy) + 
+  geom_edge_link() + 
+  geom_node_point() + 
+  theme_graph()
+
+
+```
+```{r}
+CogSci_2019_n1_igraph <-
+  graph_from_data_frame(d = friends_1,
+                        vertices = nodes1,
+                        directed = TRUE)
+
+CogSci_2019_n1_igraph <- simplify(CogSci_2019_n1_igraph, 
+                                  remove.multiple = TRUE, 
+                                  remove.loops = TRUE,
+                                  edge.attr.comb = igraph_opt("edge.attr.comb"))
+
+V(CogSci_2019_n1_igraph)$frame.color <- "white"
+V(CogSci_2019_n1_igraph)$color <- "orange"
+V(CogSci_2019_n1_igraph)$label <- "" 
+E(CogSci_2019_n1_igraph)$arrow.mode <- 0
+E(CogSci_2019_n1_igraph)$width <- edge_attr(CogSci_2019_n1_igraph)$weight/2
+deg <- degree(CogSci_2019_n1_igraph, mode="all")
+V(CogSci_2019_n1_igraph)$size <- deg
+
+p1<-plot(CogSci_2019_n1_igraph,
+     layout = layout_on_sphere, # Explore layouts!
+     edge.arrow.size = 0.2)
+
+plot(CogSci_2019_n1_igraph,
+     layout = layout_nicely, # Explore layouts!
+     edge.arrow.size = 0.2)
+```
+```{r}
+CogSci_2019_n4_igraph <-
+  graph_from_data_frame(d = friends_4,
+                        vertices = nodes4,
+                        directed = TRUE)
+
+CogSci_2019_n4_igraph <- simplify(CogSci_2019_n4_igraph, 
+                                  remove.multiple = TRUE, 
+                                  remove.loops = TRUE,
+                                  edge.attr.comb = igraph_opt("edge.attr.comb"))
+
+V(CogSci_2019_n4_igraph)$frame.color <- "white"
+V(CogSci_2019_n4_igraph)$color <- "orange"
+V(CogSci_2019_n4_igraph)$label <- "" 
+E(CogSci_2019_n4_igraph)$arrow.mode <- 0
+E(CogSci_2019_n4_igraph)$width <- edge_attr(CogSci_2019_n4_igraph)$weight/2
+
+deg <- degree(CogSci_2019_n4_igraph, mode="all")
+V(CogSci_2019_n4_igraph)$size <- deg
+
+plot(CogSci_2019_n4_igraph,
+     layout = layout_on_sphere, # Explore layouts!
+     edge.arrow.size = 0.2)
+
+plot(CogSci_2019_n4_igraph,
+     layout = layout_nicely, # Explore layouts!
+     edge.arrow.size = 0.2)
+```
+
+```{r}
+pacman::p_load(visNetwork)
+
+visNetwork(nodes, friends_0)
+```
+
+```{r}
+degree_distribution(CogSci_2019_n0_igraph)
+mean(degree_distribution(CogSci_2019_n0_igraph))
+mean(degree_distribution(CogSci_2019_n1_igraph))
+mean(degree_distribution(CogSci_2019_n4_igraph))
+
+# Degree
+rethinking::dens(degree_distribution(CogSci_2019_n0_igraph))
+rethinking::dens(degree_distribution(CogSci_2019_n1_igraph))
+rethinking::dens(degree_distribution(CogSci_2019_n4_igraph))
+
+# Average path length
+mean_distance(CogSci_2019_n0_igraph, directed = TRUE, unconnected = TRUE)
+mean_distance(CogSci_2019_n1_igraph, directed = TRUE, unconnected = TRUE)
+mean_distance(CogSci_2019_n4_igraph, directed = TRUE, unconnected = TRUE)
+## UNCONNECTED???
+
+
+# Clustering coefficient
+transitivity(CogSci_2019_n0_igraph)
+transitivity(CogSci_2019_n1_igraph)
+transitivity(CogSci_2019_n4_igraph)
+
+## Centrality
+
+mean(betweenness(CogSci_2019_n0_igraph))
+rethinking::dens(betweenness(CogSci_2019_n0_igraph))
+mean(betweenness(CogSci_2019_n1_igraph))
+rethinking::dens(betweenness(CogSci_2019_n1_igraph))
+mean(betweenness(CogSci_2019_n4_igraph))
+rethinking::dens(betweenness(CogSci_2019_n4_igraph))
+
+mean(eigen_centrality(CogSci_2019_n0_igraph)$vector)
+mean(eigen_centrality(CogSci_2019_n1_igraph)$vector)
+mean(eigen_centrality(CogSci_2019_n4_igraph)$vector)
+
+```
+```{r}
+# Community detection
+wc1 <- cluster_walktrap(CogSci_2019_n0_igraph)
+wc1 <- cluster_infomap(as.undirected(CogSci_2019_n0_igraph))
+modularity(wc1)
+membership(wc1)
+
+wc2 <- cluster_walktrap(CogSci_2019_n1_igraph)
+modularity(wc2)
+membership(wc2)
+
+wc3 <- cluster_walktrap(CogSci_2019_n4_igraph)
+modularity(wc3)
+membership(wc3)
+
+plot(wc1, CogSci_2019_n0_igraph)
+plot(wc2, CogSci_2019_n1_igraph)
+plot(wc3, CogSci_2019_n4_igraph)
+
+
+# Community detection (by optimizing modularity over partitions):
+clp <- cluster_louvain(as.undirected(CogSci_2019_n0_igraph))
+plot(clp, CogSci_2019_n0_igraph)
+
+clp <- cluster_louvain(as.undirected(CogSci_2019_n1_igraph))
+plot(clp, CogSci_2019_n1_igraph)
+
+clp <- cluster_louvain(as.undirected(CogSci_2019_n4_igraph))
+plot(clp, CogSci_2019_n4_igraph)
+
+#clp <- cluster_optimal(CogSci19_igraph)
+#plot(clp, CogSci19_igraph)
+
+#par(mfrow=c(1,1))
+```
+
