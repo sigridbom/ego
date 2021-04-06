@@ -1,0 +1,182 @@
+---
+title: "stats_ch9"
+author: "Sigrid"
+date: "4/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#loading packages
+pacman::p_load(tidyverse, brms, patchwork)
+```
+
+# 9.7. Practice
+## Easy.
+### 9E1. Which of the following is a requirement of the simple Metropolis algorithm?
+*(1) The parameters must be discrete.*
+*(2) The likelihood function must be Gaussian.* 
+*(3) The proposal distribution must be symmetric.*
+
+Answer: 
+1 is not a requirement, the parameters can be discrete. 2 is also not a requirement, the distribution could be any symmetrical distribution. 
+3 is a requirement, the proposal distribution must be symmetric. When the king decides which island to go to next, there must be an equal chance of going to island A to B and from island B to A. That means that the way we choose our proposed parameter values is symmetric. 
+
+### 9E2. Gibbs sampling is more efficient than the Metropolis algorith. How does it achieve this extra efficiency? Are there any limitations to the Gibbs sampling strategy?
+
+It allows asymmetrical proposals (e.g., say the coin which the king uses to figure out where to go next is biased to lead him clockwise around the circle of islands).
+It is more efficient because it uses adaptive proposals (clever proposals), which means that less proposed steps are rejected. 
+The adaptive proposals are made using *conjugate pairs* which are particular combinations of prior distributions and likelihoods. 
+Limitations: Might not be the best for multilevel models. You might not want to use conjugate pairs. As the metropolis, it tends to get stuck in small regions of the posterior for potentially a long time, when models become more complex and contains a very large number of parameters. 
+
+### 9E3. Which sort of parameters can Hamiltonian Monte Carlo not handle? Can you explain why? 
+Highly correlated parameters (found in models with many parameters). This means that there are regions of the posterior distribution where there is high correlation. High correlation makes a narrow ridge of high probability combinations, which means that the Hamiltonian Monte Carlo (Metropolis + Gibs) gets stuck in these regions for potentially a very long period of time (because they make many dumb proposals of where to go next). 
+
+Discrete parameters. HMC depends on gradients which to explore using a physics simulation. Discrete parameters would not allow for the construction of any gradients. (from https://www.erikkusch.com/post/rethinking/statistical-rethinking-chapter-09/)
+
+### 9E4. Explain the difference between the effective number of samples, n_eff as calculated by Stan, and the actual number of samples.
+Effective number of samples (n_eff) is an estimate of the number of independent samples you managed to get. It can be higher than the actual number of samples, because the machine is incredibly clever. It can create sequential samples which are better than un-correlated - they are anti-correlated. 
+The actual number of samples: How many samples you asked the golem to run, e.g., 2000 samples (that is, the number of data points we have).
+
+*BRMS returns bulk_ESS and tail_ESS.*
+Bulk_ESS corresponds to n_eff (centered around the mean of the distribution) and tail_ESS gives the effective sample size for a specific interval (e.g., 95%). Since we want stability, it is nice to have tail_ESS. 
+
+###9E5. Which value should Rhat approach, when a chain is sampling the posterior distribution cor- rectly?
+When all is well, it should approach 1 from above. Rhat is an indicator of the convergence of the Markov chains to the target distribution. 
+
+Answer: Rhat, in R, reflects variance within a chain versus variance between chains. If these are the same, Rhat will be  - i.e.: it does not matter from which chain we would infere parameters and predictions. Values higher than 1.0 can indicate problems in the model. Values much higher than 1 indicate serious issues. (from https://www.erikkusch.com/post/rethinking/statistical-rethinking-chapter-09/)
+
+### 9E6. Sketch a good traceplot for a Markovchain, one that is effectively sampling from the posterior distribution. What is good about its shape? Then sketch a trace plot for a malfunctioning Markov chain. What about its shape indicates malfunction?
+In good trace plots, you look for 
+1) stationarity: the path of each chain staying within the same high-probability portion of the posterior distribution (stable central tendency).  
+2) good mixing: the chain rapidly explores the full region (it rapidly zig-zags around, doesn't slowly wander). 
+3) convergence: multiple independent chains stick around the same region of high probability. 
+
+The sketching part. First, we need the data:
+
+```{r}
+library(brms)
+data(rugged, package = "rethinking")
+d <- rugged
+rm(rugged)
+```
+
+```{r}
+d <- 
+  d %>%
+  mutate(log_gdp = log(rgdppc_2000))
+
+dd <-
+  d %>%
+  drop_na(rgdppc_2000) %>% 
+  mutate(log_gdp_std = log_gdp / mean(log_gdp),
+         rugged_std  = rugged / max(rugged),
+         cid         = ifelse(cont_africa == 1, "1", "2")) %>% 
+  mutate(rugged_std_c = rugged_std - mean(rugged_std))
+```
+
+A word about the following model.
+Rugged_std - 0.215 is mean centering the already standardized rugged data (by max before). 0.215 is the mean of the rugged_std. 
+The following is using non-linear syntax, whatever that means. 
+
+```{r}
+b9.1 <- 
+  brm(data = dd, 
+      family = gaussian,
+      bf(log_gdp_std ~ 0 + a + b * (rugged_std - 0.215), 
+         a ~ 0 + cid, 
+         b ~ 0 + cid,
+         nl = TRUE),
+      prior = c(prior(normal(1, 0.1), class = b, coef = cid1, nlpar = a),
+                prior(normal(1, 0.1), class = b, coef = cid2, nlpar = a),
+                prior(normal(0, 0.3), class = b, coef = cid1, nlpar = b),
+                prior(normal(0, 0.3), class = b, coef = cid2, nlpar = b),
+                prior(exponential(1), class = sigma)),
+      chains = 1, cores = 1,
+      seed = 9,
+      file = "fits/b09.01")
+```
+
+Getting the summary of the posterior 
+
+```{r}
+print(b9.1)
+```
+
+```{r}
+parallel::detectCores()
+# 4
+
+b9.1b <- 
+  update(b9.1, 
+         chains = 4, cores = 4,
+         seed = 9,
+         file = "fits/b09.01b")
+
+```
+
+```{r}
+b9.1b$formula
+b9.1b$prior #does the same as prior_summary
+
+prior_summary(b9.1b)
+```
+plotting time
+```{r}
+library(bayesplot)
+
+plot(b9.1b)
+```
+```{r}
+#library(bayesplot)
+install.packages('wesanderson', 'ggthemes')
+library(wesanderson)
+wes_palette('Moonrise2')
+wes_palette('Rushmore1')
+wes_palette('Royal1')
+wes_palette('Royal1')[1:4]
+wes_palette('FantasticFox1')
+
+
+# changing the default theme when plotting
+theme_set(
+  theme_default()  +
+    theme(plot.background = element_rect(fill = wes_palette("Royal1")[3],
+                                         color = wes_palette("Royal1")[4]))
+)
+```
+
+
+```{r}
+post <- posterior_samples(b9.1b, add_chain = T)
+
+mcmc_trace(post[, c(1:5, 7)],  # we need to include column 7 because it contains the chain info 
+           facet_args = list(ncol = 3), 
+           size = .15) +
+  labs(title = "My custom trace plots") +
+  theme(legend.position = c(.95, .2))
+```
+### 9E7. Repeat the problem above, but now for a trace rank plot. 
+Trace rank plot - trank plot: A visualization of the chains as a plot of the distribution of the ranked samples. Histogram of ranks for each individual chain. If the chains are exploring the same space efficiently, the histograms should be similar to one another and largely overlapping. 
+
+We need to add the information about the individual chains when we extract the posterior from the model.
+
+```{r}
+post <- posterior_samples(b9.1b, add_chain = T)
+
+glimpse(post)
+```
+Trank plots
+```{r}
+install.packages('ggmcmc')
+
+post %>% 
+  mcmc_rank_overlay(pars = vars(b_a_cid1:sigma)) +
+  ggtitle("My custom trank plots") +
+  coord_cartesian(ylim = c(25, NA)) +
+  theme(legend.position = c(.95, .2))
+```
+
