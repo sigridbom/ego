@@ -1,0 +1,88 @@
+---
+title: "stats_ch11"
+author: "Sigrid"
+date: "4/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#loading packages
+pacman::p_load(tidyverse, brms, patchwork, bayesplot, wesanderson, ggthemes, tidybayes)
+```
+
+```{r}
+# setting up the color theme for plotting
+wes_palette('Royal2')
+
+# changing the default theme when plotting
+theme_set(
+  theme_default()  +
+    theme(plot.background = element_rect(fill = wes_palette("Royal2")[4],
+                                         color = wes_palette("Royal2")[3][5]))
+)
+```
+
+# 11.6. Practice
+## Easy.
+### 11E1. If an event has probability 0.35, what are the log-odds of this event?
+
+```{r}
+p = .35
+log(p/(1-p))
+```
+Answer: -0.62
+
+### 11E2. If an event has log-odds 3.2, what is the probability of this event?
+```{r}
+# to transform log-odds to the probability space, we use inv_logit_scaled() from brms
+
+inv_logit_scaled(3.2)
+
+```
+Answer: the probability is 0.96 
+
+### 11E3. Suppose that a coefficient in a logistic regression has value 1.7. What does this imply about the proportional change in odds of the outcome?
+
+```{r}
+exp(1.7)
+```
+When the predictor increases by one unit, the probability of an event happening is multiplied by about 5.5. (from https://www.erikkusch.com/post/rethinking/statistical-rethinking-chapter-11/)
+
+### 11E4. Why do Poisson regressions sometimes require the use of an offset? Provide an example.
+The logarithm of the exposure (when exposure varies across observations). (pp. 357).
+I.e., Poisson models assume that the rate of events is constant in time. But sometimes different units of time have been used, hence the monastery example from the book, where some had used manuscripts per day and some had used manuscripts per week. This can be worked into the model by adding the log of exposures in the model. see https://www.erikkusch.com/post/rethinking/statistical-rethinking-chapter-11/ for a better explanation. It seems quite clever. 
+
+## Medium.
+### 11M1. As explained int he chapter, binomial data can be organized in aggregated and disaggregated forms, without any impact on inference. But the likelihood of the data does change when the data are converted between the two formats. Can you explain why?
+First, aggregated data is when the data is organized in a way, where we don't care about the order of events, we only care about how many times an event happened. Dis-aggregated is when each row corresponds to one event (happening or not happening, 0/1). 
+
+When we don't care about the order of the events, the probabilities are much larger, because there are more ways in which we can end up with the observed number of events (entropy). 
+
+Bonus info: WAIC or PSIS only really work (mostly) with dis-aggregated data. 
+
+### 11M2. If a coefficient in a Poisson regression has value 1.7, what does this imply about the change in the outcome?
+```{r}
+exp(1.7)
+```
+When lambda = 1.7, the beta estimate is multiplied by around 5.5.
+
+### 11M3. Explain why the logit link is appropriate for a binomial generalized linear model. 
+
+
+### 11M4. Explain why the log link is appropriate for a Poisson generalized linear model.
+
+### 11M5. What would it imply to use a logit link for the mean of a Poisson generalized linear model? Can you think of a real research problem for which this would make sense?
+
+### 11M6. State the constraints for which the binomial and Poisson distributions have maximum en- tropy. Are the constraints different at all for binomial and Poisson? Why or why not?
+
+### 11M7. 
+
+### 11M8. Revisit the data (Kline) islands example. This time drop Hawaii from the sample and refit the models. What changes to you observe?
+
+## Hard.
+11H1. Use quap to construct a quadratic approximate posterior distribution for the chimpanzee model that includes a unique intercept for each actor, m10.4 (page ??). Compare the quadratic ap- proximation to the posterior distribution produced instead from MCMC. Can you explain both the differences and the similarities between the approximate and the MCMC distributions?
+11H2. UseWAICtocomparethechimpanzeemodelthatincludesauniqueinterceptforeachactor, m11.4 (page ??), to the simpler models fit in the same section.
